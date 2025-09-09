@@ -5,7 +5,7 @@ const { userExtractor } = require('../utils/middleware')
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog
     .find({}).populate('user', { username: 1, name: 1 })
-
+    .sort({ createdAt: -1 }) // Sort by creation date, newest first
   response.json(blogs)
 })
 
@@ -13,65 +13,92 @@ blogsRouter.put('/:id/likes', userExtractor, async (request, response) => {
   const { likes } = request.body
 
   try {
-    const updatedBlog = await Blog.findByIdAndUpdate(
-      request.params.id,
-      { likes },
-      { new: true, runValidators: true }
-    ).populate('user', { username: 1, name: 1 })
-
-    if (!updatedBlog) {
+    const blog = await Blog.findById(request.params.id)
+    if (!blog) {
       return response.status(404).json({ error: 'Blog not found' })
     }
 
-    response.json(updatedBlog)
-  } catch {
+    blog.likes = likes
+    const updatedBlog = await blog.save()
+    const populatedBlog = await updatedBlog.populate('user', { username: 1, name: 1 })
+    
+    response.json(populatedBlog)
+  } catch (error) {
     response.status(500).json({ error: 'Server error' })
   }
 })
 
-blogsRouter.post('/', userExtractor, async (request, response, next) => {
-  const body = request.body
-  const user = request.user  // Ya viene desde userExtractor
+blogsRouter.post('/', userExtractor, async (request, response) => {
+  const { title, content, url, tags } = request.body
+  const user = request.user
 
-  if (!body.title || !body.url) {
-    return response.status(400).json({ error: 'title and url are required' })
+  if (!title || !content) {
+    return response.status(400).json({ error: 'title and content are required' })
   }
 
   const blog = new Blog({
-    title: body.title,
-    author: body.author,
-    url: body.url,
-    likes: body.likes || 0,
-    user: user._id
+    title,
+    content,
+    url,
+    tags: tags || [],
+    author: user.name,
+    likes: 0,
+    user: user._id,
+    comments: []
   })
 
   try {
     const savedBlog = await blog.save()
     user.blogs = user.blogs.concat(savedBlog._id)
     await user.save()
+    
     const populatedBlog = await savedBlog.populate('user', { username: 1, name: 1 })
     response.status(201).json(populatedBlog)
-  } catch (exception) {
-    next(exception)
+  } catch (error) {
+    response.status(400).json({ error: error.message })
   }
 })
 
+blogsRouter.post('/:id/comments', userExtractor, async (request, response) => {
+  const { comment } = request.body
+  
+  try {
+    const blog = await Blog.findById(request.params.id)
+    if (!blog) {
+      return response.status(404).json({ error: 'Blog not found' })
+    }
 
+    blog.comments.push({ text: comment, user: request.user._id })
+    const updatedBlog = await blog.save()
+    const populatedBlog = await updatedBlog.populate('user', { username: 1, name: 1 })
+    
+    response.json(populatedBlog)
+  } catch (error) {
+    response.status(400).json({ error: error.message })
+  }
+})
 
 blogsRouter.get('/:id', async (request, response) => {
-  const blog = await Blog.findById(request.params.id)
-  if (blog) {
-    response.json(blog)
-  } else {
-    response.status(404).end()
+  try {
+    const blog = await Blog.findById(request.params.id)
+      .populate('user', { username: 1, name: 1 })
+      .populate('comments.user', { username: 1, name: 1 })
+    
+    if (blog) {
+      response.json(blog)
+    } else {
+      response.status(404).end()
+    }
+  } catch (error) {
+    response.status(400).json({ error: error.message })
   }
 })
 
-blogsRouter.delete('/:id', userExtractor, async (request, response, next) => {
+blogsRouter.delete('/:id', userExtractor, async (request, response) => {
   try {
-    const user = request.user  // Viene del middleware
-
+    const user = request.user
     const blog = await Blog.findById(request.params.id)
+    
     if (!blog) {
       return response.status(404).json({ error: 'blog not found' })
     }
@@ -80,14 +107,14 @@ blogsRouter.delete('/:id', userExtractor, async (request, response, next) => {
       return response.status(403).json({ error: 'only the creator can delete the blog' })
     }
 
-    await Blog.findByIdAndDelete(request.params.id)
+    await blog.deleteOne()
+    user.blogs = user.blogs.filter(b => b.toString() !== blog._id.toString())
+    await user.save()
+    
     response.status(204).end()
-
   } catch (error) {
-    next(error)
+    response.status(400).json({ error: error.message })
   }
 })
-
-
 
 module.exports = blogsRouter
