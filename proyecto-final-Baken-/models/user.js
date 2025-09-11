@@ -1,9 +1,7 @@
-const { Model, DataTypes } = require('sequelize')
-const { sequelize } = require('../util/db')
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../db');
 
-class User extends Model {}
-
-User.init({
+const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -11,34 +9,27 @@ User.init({
   },
   username: {
     type: DataTypes.STRING,
-    allowNull: false,
     unique: true,
+    allowNull: false,
     validate: {
-      len: [5, Infinity]
+      len: [3, 30]
     }
   },
   name: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING,
+    allowNull: false
   },
   passwordHash: {
     type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      len: [3, Infinity]
-    }
+    allowNull: false
   },
-  rol: {
-    type: DataTypes.STRING,
+  Rol: {
+    type: DataTypes.ENUM('user', 'maker', 'admin'),
     defaultValue: 'user'
   }
 }, {
-  sequelize,
-  underscored: true,
-  timestamps: false,
-  modelName: 'user',
-  defaultScope: {
-    attributes: { exclude: ['passwordHash'] }
-  }
-})
+  tableName: 'users',
+  timestamps: true
+});
 
-module.exports = User
+module.exports = User;
