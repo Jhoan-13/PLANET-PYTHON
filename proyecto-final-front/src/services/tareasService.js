@@ -1,5 +1,7 @@
 import axios from 'axios'
-const baseUrl = '/api/tareas'
+import { BASE_URL } from './config'
+
+const baseUrl = `${BASE_URL}/tareas`
 
 let token = null
 
@@ -7,69 +9,39 @@ const setToken = newToken => {
   token = `Bearer ${newToken}`
 }
 
-export const crearTarea = async (tarea) => {
-  if (!token) {
-    throw new Error('Token no disponible')
-  }
+const obtenerTodas = async () => {
+  const response = await axios.get(baseUrl)
+  return response.data
+}
 
+const obtenerMisTareas = async () => {
   const config = {
     headers: { Authorization: token }
   }
-
-  try {
-    const response = await axios.post(baseUrl, {
-      titulo: tarea.titulo,
-      descripcion: tarea.descripcion,
-      fechaLimite: tarea.fechaLimite,
-      preguntas: tarea.preguntas.map(p => ({
-        pregunta: p.pregunta,
-        opciones: p.opciones.map(o => ({
-          texto: o.texto,
-          esCorrecta: o.esCorrecta
-        }))
-      }))
-    }, config)
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.error || error.message
-  }
+  const response = await axios.get(`${baseUrl}/mis-tareas`, config)
+  return response.data
 }
 
-export const obtenerMisTareas = async () => {
-  if (!token) {
-    throw new Error('Token no disponible')
-  }
-
+const crearTarea = async newObject => {
   const config = {
     headers: { Authorization: token }
   }
-
-  try {
-    const response = await axios.get(`${baseUrl}/mis-tareas`, config)
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.error || error.message
-  }
+  const response = await axios.post(baseUrl, newObject, config)
+  return response.data
 }
 
-export const responderTarea = async (tareaId, preguntaIndex, respuestaIndex) => {
-  if (!token) {
-    throw new Error('Token no disponible')
-  }
-
+const responderTarea = async (id, answerData) => {
   const config = {
     headers: { Authorization: token }
   }
-
-  try {
-    const response = await axios.post(`${baseUrl}/${tareaId}/responder`, {
-      preguntaIndex,
-      respuestaIndex
-    }, config)
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.error || error.message
-  }
+  const response = await axios.post(`${baseUrl}/${id}/responder`, answerData, config)
+  return response.data
 }
 
-export { setToken }
+export {
+  obtenerTodas,
+  obtenerMisTareas,
+  crearTarea,
+  responderTarea,
+  setToken
+}

@@ -8,19 +8,16 @@ const User = sequelize.define('User', {
     autoIncrement: true
   },
   username: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     unique: true,
-    allowNull: false,
-    validate: {
-      len: [3, 30]
-    }
+    allowNull: false
   },
   name: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false
   },
   passwordHash: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(255),
     allowNull: false
   },
   Rol: {
@@ -28,7 +25,7 @@ const User = sequelize.define('User', {
     defaultValue: 'user'
   }
 }, {
-  tableName: 'users',
+  tableName: 'Users', // Match the table name in foreign key references
   timestamps: true
 });
 

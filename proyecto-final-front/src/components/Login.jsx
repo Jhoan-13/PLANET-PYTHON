@@ -1,55 +1,72 @@
-import Notification from "./Notification"
-import PropTypes from 'prop-types'
+import { useState } from 'react'
+import * as loginService from '../services/login'
+import * as tareasService from '../services/tareasService'
 import './css/login.css'
 
-const LoginForm = ({
-  handleLogin,
-  username,
-  setUsername,
-  password,
-  setPassword,
-  message
-}) => {
+const Login = ({ setUser, setMessage }) => {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+
+    try {
+      const user = await loginService.login({
+        username,
+        password
+      })
+
+      window.localStorage.setItem(
+        'loggedUser', JSON.stringify(user)
+      )
+
+      tareasService.setToken(user.token)
+      setUser(user)
+      setUsername('')
+      setPassword('')
+
+    } catch (error) {
+      setMessage('Credenciales incorrectas')
+      setTimeout(() => {
+        setMessage(null)
+      }, 5000)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div>
-      <h2>Login</h2>
-      <Notification message={message}/>
+    <div className="login-container">
+      <h2>Iniciar Sesión</h2>
       <form onSubmit={handleLogin}>
         <div>
-          <label htmlFor="username">username </label>
           <input
-            id="username"
             type="text"
             value={username}
             name="Username"
+            placeholder="Usuario"
             onChange={({ target }) => setUsername(target.value)}
-            autoComplete="username"
+            disabled={loading}
           />
         </div>
         <div>
-          <label htmlFor="password">password </label>
           <input
-            id="password"
             type="password"
             value={password}
             name="Password"
+            placeholder="Contraseña"
             onChange={({ target }) => setPassword(target.value)}
-            autoComplete="current-password"
+            disabled={loading}
           />
         </div>
-        <button type="submit">login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Cargando...' : 'Iniciar Sesión'}
+        </button>
       </form>
     </div>
   )
 }
 
-LoginForm.propTypes = {
-  handleLogin: PropTypes.func.isRequired,
-  username: PropTypes.string.isRequired,
-  setUsername: PropTypes.func.isRequired,
-  password: PropTypes.string.isRequired,
-  setPassword: PropTypes.func.isRequired,
-  message: PropTypes.object
-}
-
-export default LoginForm
+export default Login

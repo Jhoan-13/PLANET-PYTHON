@@ -15,6 +15,16 @@ User.hasMany(Blog, {
   as: 'blogs'
 });
 
+Tarea.belongsTo(User, {
+  foreignKey: 'creador',
+  as: 'creator'
+});
+
+User.hasMany(Tarea, {
+  foreignKey: 'creador',
+  as: 'tareas'
+});
+
 // Test database connection
 const testConnection = async () => {
   try {

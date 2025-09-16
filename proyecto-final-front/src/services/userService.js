@@ -1,15 +1,23 @@
 // src/services/userService.js
 import axios from 'axios'
-const baseUrl = '/api/users'
+import { BASE_URL } from './config'
 
-const createUser = async userData => {
+const baseUrl = `${BASE_URL}/users`
+
+const getAll = async () => {
+  const response = await axios.get(baseUrl)
+  return response.data
+}
+
+const create = async userData => {
   const response = await axios.post(baseUrl, userData)
   return response.data
 }
-const getAll = async () => {
-  const response = await axios.get('/api/users')
+
+const getMakers = async () => {
+  const response = await axios.get(`${baseUrl}/makers`)
   return response.data
 }
 
-export default { createUser, getAll }
+export default { getAll, create, getMakers }
 
