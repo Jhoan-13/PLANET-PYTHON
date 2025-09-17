@@ -1,21 +1,12 @@
 const blogsRouter = require('express').Router()
-const { Blog, User } = require('../models')
+const Blog = require('../models/blog')
 const { userExtractor } = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
-  try {
-    const blogs = await Blog.findAll({
-      include: [{
-        model: User,
-        attributes: ['username', 'name']
-      }],
-      order: [['createdAt', 'DESC']]
-    })
-    response.json(blogs)
-  } catch (error) {
-    console.error('Error getting blogs:', error)
-    response.status(500).json({ error: 'Error al obtener blogs' })
-  }
+  const blogs = await Blog
+    .find({}).populate('user', { username: 1, name: 1 })
+    .sort({ createdAt: -1 }) // Sort by creation date, newest first
+  response.json(blogs)
 })
 
 blogsRouter.put('/:id/likes', userExtractor, async (request, response) => {
