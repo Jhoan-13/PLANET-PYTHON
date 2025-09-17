@@ -26,28 +26,22 @@ loginRouter.post('/', async (request, response) => {
     const userForToken = {
       username: user.username,
       id: user.id,
-      rol: user.Rol
+      Rol: user.Rol
     }
 
-    const token = jwt.sign(
-      userForToken, 
-      config.SECRET,
-      { expiresIn: '24h' }
-    )
+    const token = jwt.sign(userForToken, config.SECRET, { expiresIn: '24h' })
 
     response.status(200).json({
       token,
       username: user.username,
       name: user.name,
-      rol: user.Rol
+      Rol: user.Rol,
+      userId: user.id // Añadido explícitamente
     })
 
   } catch (error) {
     console.error('Error en login:', error)
-    response.status(500).json({ 
-      error: 'Error en el servidor',
-      details: error.message 
-    })
+    response.status(500).json({ error: 'Error en el servidor' })
   }
 })
 

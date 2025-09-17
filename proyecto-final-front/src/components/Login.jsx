@@ -1,37 +1,24 @@
 import { useState } from 'react'
-import * as loginService from '../services/login'
-import * as tareasService from '../services/tareasService'
+import loginService from '../services/login'
+import { setToken as setTareasToken } from '../services/tareasService'
 import './css/login.css'
 
-const Login = ({ setUser, setMessage }) => {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+const Login = ({ handleLogin: parentHandleLogin, username, setUsername, password, setPassword, message }) => {
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
 
     try {
-      const user = await loginService.login({
-        username,
-        password
-      })
-
-      window.localStorage.setItem(
-        'loggedUser', JSON.stringify(user)
-      )
-
-      tareasService.setToken(user.token)
-      setUser(user)
+      // Usamos la función handleLogin que viene como prop
+      await parentHandleLogin(event)
+      
       setUsername('')
       setPassword('')
 
     } catch (error) {
-      setMessage('Credenciales incorrectas')
-      setTimeout(() => {
-        setMessage(null)
-      }, 5000)
+      console.error('Error en login:', error)
     } finally {
       setLoading(false)
     }
@@ -40,7 +27,12 @@ const Login = ({ setUser, setMessage }) => {
   return (
     <div className="login-container">
       <h2>Iniciar Sesión</h2>
-      <form onSubmit={handleLogin}>
+      {message && (
+        <div className={`message ${message.type ? 'success' : 'error'}`}>
+          {message.message}
+        </div>
+      )}
+      <form onSubmit={handleSubmit}>
         <div>
           <input
             type="text"
