@@ -1,26 +1,37 @@
 const { sequelize } = require('../db');
 const { User, Blog, Contact, Tarea } = require('../models');
 const logger = require('./logger');
+const bcrypt = require('bcrypt');
 
 const setupDatabase = async () => {
   try {
-    // Force sync only on first run
     await sequelize.sync({ force: true });
-    logger.info('Database tables created');
+    
+    // Crear usuarios iniciales
+    await User.bulkCreate([
+      {
+        username: 'administrador',
+        name: 'Administrador Principal',
+        passwordHash: await bcrypt.hash('admin123', 10),
+        Rol: 'administrador'
+      },
+      {
+        username: 'profesor1',
+        name: 'Profesor Demo',
+        passwordHash: await bcrypt.hash('profesor123', 10),
+        Rol: 'profesor'
+      },
+      {
+        username: 'usuario1',
+        name: 'Usuario Demo',
+        passwordHash: await bcrypt.hash('usuario123', 10),
+        Rol: 'usuario'
+      }
+    ]);
 
-    // Create default admin user
-    await User.create({
-      username: 'admin',
-      name: 'Administrator',
-      passwordHash: await require('bcrypt').hash('admin123', 10),
-      Rol: 'admin'
-    });
-
-    logger.info('Initial setup completed');
-    process.exit(0);
+    logger.info('Usuarios iniciales creados correctamente');
   } catch (error) {
-    logger.error('Setup failed:', error);
-    process.exit(1);
+    logger.error('Error en la configuración:', error);
   }
 };
 

@@ -15,6 +15,8 @@ usersRouter.get('/', async (request, response) => {
   }
 });
 
+const validRoles = ['usuario', 'profesor', 'administrador'];
+
 // Create new user
 usersRouter.post('/', async (request, response) => {
   try {
@@ -23,37 +25,14 @@ usersRouter.post('/', async (request, response) => {
     // Validate required fields
     if (!username || !password || !name) {
       return response.status(400).json({
-        error: 'Username, password and name are required'
-      });
-    }
-
-    // Validate username length
-    if (username.length < 3) {
-      return response.status(400).json({
-        error: 'Username must be at least 3 characters long'
-      });
-    }
-
-    // Validate password strength
-    if (password.length < 6) {
-      return response.status(400).json({
-        error: 'Password must be at least 6 characters long'
+        error: 'El usuario, contraseña y nombre son requeridos'
       });
     }
 
     // Validate role
-    const validRoles = ['user', 'maker', 'admin'];
     if (!validRoles.includes(Rol)) {
       return response.status(400).json({
-        error: 'Invalid role'
-      });
-    }
-
-    // Check if username already exists
-    const existingUser = await User.findOne({ where: { username } });
-    if (existingUser) {
-      return response.status(400).json({
-        error: 'Username already taken'
+        error: 'Rol inválido. Debe ser: usuario, profesor o administrador'
       });
     }
 
@@ -64,7 +43,7 @@ usersRouter.post('/', async (request, response) => {
       username,
       name,
       passwordHash,
-      Rol: Rol || 'user' // Default to 'user' if not specified
+      Rol
     });
 
     response.status(201).json({
@@ -74,9 +53,9 @@ usersRouter.post('/', async (request, response) => {
       Rol: user.Rol
     });
   } catch (error) {
-    response.status(500).json({
-      error: 'Error creating user',
-      details: error.message
+    console.error('Error creating user:', error);
+    response.status(400).json({
+      error: error.message
     });
   }
 });

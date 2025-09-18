@@ -8,21 +8,28 @@ const User = sequelize.define('User', {
     autoIncrement: true
   },
   username: {
-    type: DataTypes.STRING(50),
-    unique: true,
-    allowNull: false
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
   name: {
-    type: DataTypes.STRING(100),
+    type: DataTypes.STRING,
     allowNull: false
   },
   passwordHash: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING,
     allowNull: false
   },
   Rol: {
-    type: DataTypes.ENUM('user', 'maker', 'admin'),
-    defaultValue: 'user'
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'usuario',
+    validate: {
+      isIn: {
+        args: [['usuario', 'profesor', 'administrador']],
+        msg: 'Rol debe ser: usuario, profesor o administrador'
+      }
+    }
   }
 }, {
   tableName: 'Users', // Match the table name in foreign key references
