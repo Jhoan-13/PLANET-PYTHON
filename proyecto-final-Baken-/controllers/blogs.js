@@ -7,6 +7,7 @@ blogsRouter.get('/', async (request, response) => {
     const blogs = await Blog.findAll({
       include: [{
         model: User,
+        as: 'user',
         attributes: ['username', 'name']
       }],
       order: [['createdAt', 'DESC']]
@@ -14,7 +15,7 @@ blogsRouter.get('/', async (request, response) => {
     response.json(blogs)
   } catch (error) {
     console.error('Error getting blogs:', error)
-    response.status(500).json({ error: 'Error al obtener blogs' })
+    response.status(500).json({ error: 'Error al obtener blogs', details: error.message })
   }
 })
 
@@ -22,7 +23,7 @@ blogsRouter.put('/:id/likes', userExtractor, async (request, response) => {
   const { likes } = request.body
 
   try {
-    const blog = await Blog.findById(request.params.id)
+    const blog = await Blog.findByPk(request.params.id)
     if (!blog) {
       return response.status(404).json({ error: 'Blog not found' })
     }

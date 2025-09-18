@@ -13,6 +13,28 @@ const Crear = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validaciones del lado del cliente
+    if (username.length < 3) {
+      setMessage("❌ El nombre de usuario debe tener al menos 3 caracteres")
+      return
+    }
+    
+    if (password.length < 6) {
+      setMessage("❌ La contraseña debe tener al menos 6 caracteres")
+      return
+    }
+    
+    if (!name) {
+      setMessage("❌ El nombre es requerido")
+      return
+    }
+    
+    if (!['user', 'maker', 'admin'].includes(Rol)) {
+      setMessage("❌ Rol inválido")
+      return
+    }
+
     try {
       const newUser = { username, name, password, Rol }
       await userService.createUser(newUser)

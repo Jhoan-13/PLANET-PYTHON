@@ -16,7 +16,7 @@ const AppRoutes = ({ user, setUser }) => (
       <Route path="/Tareas" element={<Tareas user={user} />} />
       <Route path="/Tareas-ver" element={<VerTareas user={user} />} />
       <Route path="/Crear" element={<Crear user={user} />} />
-      <Route path="/contactanos" element={<Callme user={user} />} />
+      <Route path="/contactanos" element={<Callme />} />
     </Routes>
   </Router>
 );

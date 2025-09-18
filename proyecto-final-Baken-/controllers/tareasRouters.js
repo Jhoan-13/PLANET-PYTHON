@@ -4,36 +4,60 @@ const User = require('../models/user')
 const tareasRouter = express.Router()
 const { userExtractor } = require('../utils/middleware')
 
-// Get tasks based on role
+// Modificar el GET para filtrar por roles
 tareasRouter.get('/mis-tareas', userExtractor, async (req, res) => {
   try {
     const usuario = req.user
-    const query = usuario.Rol === 'maker' 
-      ? { creador: usuario.id }
-      : { 'userInfo.Rol': 'maker' }
 
-    const tareas = await Tarea.find(query)
-      .populate('creador', { username: 1, name: 1, Rol: 1 })
-      .sort({ fechaLimite: 1 }) // Sort by deadline
+    let tareas
+    if (usuario.Rol === 'maker') {
+      // Si es maker, obtiene las tareas que ha creado
+      tareas = await Tarea.findAll({
+        where: { creadorId: usuario.id },
+        include: [{
+          model: User,
+          as: 'autor',
+          attributes: ['username', 'name', 'Rol']
+        }],
+        raw: false
+      })
+    } else if (usuario.Rol === 'user') {
+      // Si es user, obtiene todas las tareas creadas por makers
+      tareas = await Tarea.findAll({
+        include: [{
+          model: User,
+          as: 'autor',
+          where: { Rol: 'maker' },
+          attributes: ['username', 'name', 'Rol']
+        }]
+      })
+    }
 
+    console.log('Tareas obtenidas:', tareas);
     res.json(tareas)
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error al obtener las tareas',
-      details: error.message 
-    })
+    console.error('Error al obtener tareas:', error)
+    console.error('Stack trace:', error.stack)
+    res.status(500).json({ error: 'Error al obtener las tareas', details: error.message })
   }
 })
 
 // Añadir este nuevo endpoint GET
 tareasRouter.get('/', async (req, res) => {
   try {
-    const tareas = await Tarea.find({})
-      .populate('creador', { username: 1, name: 1, Rol: 1 })
+    console.log('Obteniendo tareas...');
+    const tareas = await Tarea.findAll({
+      include: [{
+        model: User,
+        as: 'autor',
+        attributes: ['username', 'name', 'Rol']
+      }],
+      raw: false
+    })
     res.json(tareas)
   } catch (error) {
     console.error('Error al obtener tareas:', error)
-    res.status(500).json({ error: 'Error al obtener las tareas' })
+    res.status(500).json({ error: 'Error al obtener las tareas', details: error.message })
   }
 })
 
@@ -104,27 +128,14 @@ tareasRouter.post('/', userExtractor, async (req, res) => {
   }
 })
 
-// POST response validation middleware
-const validateResponse = (req, res, next) => {
-  const { preguntaIndex, respuestaIndex } = req.body
-  if (typeof preguntaIndex !== 'number' || typeof respuestaIndex !== 'number') {
-    return res.status(400).json({ 
-      error: 'Los índices deben ser números' 
-    })
-  }
-  next()
-}
-
-// POST answer endpoint with validation
-tareasRouter.post('/:id/responder', [userExtractor, validateResponse], async (req, res) => {
+// POST para responder una pregunta específica de una tarea
+tareasRouter.post('/:id/responder', userExtractor, async (req, res) => {
   try {
     const { preguntaIndex, respuestaIndex } = req.body
     const user = req.user
 
     if (user.Rol !== 'user') {
-      return res.status(403).json({ 
-        error: 'Solo los usuarios pueden responder tareas' 
-      })
+      return res.status(403).json({ error: 'Solo los usuarios pueden responder tareas' })
     }
 
     const tarea = await Tarea.findById(req.params.id)
@@ -132,37 +143,41 @@ tareasRouter.post('/:id/responder', [userExtractor, validateResponse], async (re
       return res.status(404).json({ error: 'Tarea no encontrada' })
     }
 
-    // Validate indices
-    if (!tarea.preguntas[preguntaIndex]) {
-      return res.status(400).json({ error: 'Pregunta no encontrada' })
+    // Validar que el índice de la pregunta sea válido
+    if (preguntaIndex < 0 || preguntaIndex >= tarea.preguntas.length) {
+      return res.status(400).json({ error: 'Índice de pregunta inválido' })
     }
 
+    // Validar que el índice de la respuesta sea válido
     const pregunta = tarea.preguntas[preguntaIndex]
-    if (!pregunta.opciones[respuestaIndex]) {
-      return res.status(400).json({ error: 'Opción no encontrada' })
+    if (respuestaIndex < 0 || respuestaIndex >= pregunta.opciones.length) {
+      return res.status(400).json({ error: 'Índice de respuesta inválido' })
     }
 
-    // Update response
-    const respuestaExistente = pregunta.respuestas
-      .findIndex(r => r.usuarioId.toString() === user.id.toString())
+    // Actualizar solo la respuesta de la pregunta específica
+    const respuestas = pregunta.respuestas || []
 
-    if (respuestaExistente >= 0) {
-      pregunta.respuestas[respuestaExistente].seleccion = respuestaIndex
-    } else {
-      pregunta.respuestas.push({ 
-        usuarioId: user.id, 
-        seleccion: respuestaIndex,
-        fechaRespuesta: new Date()
-      })
+const yaRespondio = respuestas.find(r => r.usuarioId.toString() === user.id.toString())
+
+if (yaRespondio) {
+  yaRespondio.seleccion = respuestaIndex
+} else {
+  respuestas.push({ usuarioId: user.id, seleccion: respuestaIndex })
+}
+
+pregunta.respuestas = respuestas
+
+    // Verificar si todas las preguntas han sido respondidas
+    const todasRespondidas = tarea.preguntas.every(p => p.respuestaSeleccionada !== -1)
+    if (todasRespondidas) {
+      tarea.completada = true
     }
 
     const tareaActualizada = await tarea.save()
     res.json(tareaActualizada)
   } catch (error) {
-    res.status(500).json({ 
-      error: 'Error al procesar respuesta',
-      details: error.message 
-    })
+    console.error('Error al responder pregunta:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 

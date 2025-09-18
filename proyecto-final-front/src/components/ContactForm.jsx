@@ -72,8 +72,7 @@ const ContactForm = ({
     setCorreoError("");
     setContrasenaError("");
     // Llama al submit original (agrega o edita contacto)
-    const contactoId = await onSubmit(e);
-    onSubmit(e);
+    await onSubmit(e);
 
     // Si hay comentario y se creó/actualizó el contacto, lo agrega
   

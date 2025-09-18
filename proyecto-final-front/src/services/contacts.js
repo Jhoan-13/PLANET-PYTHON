@@ -1,13 +1,7 @@
 import axios from 'axios'
 import { BASE_URL } from './config'
 
-const baseUrl = `${BASE_URL}/tareas`
-
-let token = null
-
-const setToken = newToken => {
-  token = `Bearer ${newToken}`
-}
+const baseUrl = `${BASE_URL}/contacts`
 
 const getAll = async () => {
   const response = await axios.get(baseUrl)
@@ -15,27 +9,18 @@ const getAll = async () => {
 }
 
 const getMine = async () => {
-  const config = {
-    headers: { Authorization: token }
-  }
-  const response = await axios.get(`${baseUrl}/mis-tareas`, config)
+  const response = await axios.get(`${baseUrl}/mis-tareas`)
   return response.data
 }
 
 const create = async newObject => {
-  const config = {
-    headers: { Authorization: token }
-  }
-  const response = await axios.post(baseUrl, newObject, config)
+  const response = await axios.post(baseUrl, newObject)
   return response.data
 }
 
-const answer = async (id, answerData) => {
-  const config = {
-    headers: { Authorization: token }
-  }
-  const response = await axios.post(`${baseUrl}/${id}/responder`, answerData, config)
+const update = async (id, newObject) => {
+  const response = await axios.put(`${baseUrl}/${id}`, newObject)
   return response.data
 }
 
-export default { getAll, getMine, create, answer, setToken }
+export default { getAll, create, update }

@@ -29,7 +29,7 @@ const Tarea = sequelize.define('Tarea', {
       this.setDataValue('preguntas', JSON.stringify(value || []));
     }
   },
-  creador: {
+  creadorId: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {

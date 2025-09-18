@@ -81,4 +81,28 @@ usersRouter.post('/', async (request, response) => {
   }
 });
 
+// Delete user
+usersRouter.delete('/:id', async (request, response) => {
+  try {
+    const id = request.params.id;
+
+    // Verificar si el usuario existe
+    const user = await User.findByPk(id);
+    if (!user) {
+      return response.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Eliminar el usuario
+    await user.destroy();
+    response.status(204).end();
+  } catch (error) {
+    response.status(500).json({
+      error: 'Error deleting user',
+      details: error.message
+    });
+  }
+});
+
 module.exports = usersRouter;

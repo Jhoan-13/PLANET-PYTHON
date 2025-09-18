@@ -16,12 +16,12 @@ User.hasMany(Blog, {
 });
 
 Tarea.belongsTo(User, {
-  foreignKey: 'creador',
-  as: 'creator'
+  foreignKey: 'creadorId',
+  as: 'autor'
 });
 
 User.hasMany(Tarea, {
-  foreignKey: 'creador',
+  foreignKey: 'creadorId',
   as: 'tareas'
 });
 

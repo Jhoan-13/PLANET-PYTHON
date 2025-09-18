@@ -9,7 +9,7 @@ const getAll = async () => {
   return response.data
 }
 
-const create = async userData => {
+const createUser = async userData => {
   const response = await axios.post(baseUrl, userData)
   return response.data
 }
@@ -19,5 +19,14 @@ const getMakers = async () => {
   return response.data
 }
 
-export default { getAll, create, getMakers }
+const deleteUser = async (id) => {
+  const response = await axios.delete(`${baseUrl}/${id}`)
+  return response.data
+}
 
+export default {
+  getAll,
+  createUser,
+  getMakers,
+  deleteUser
+}

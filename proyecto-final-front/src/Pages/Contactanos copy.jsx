@@ -15,13 +15,17 @@ const Callme = () => {
 
   // Obtener contactos al cargar el componente
   useEffect(() => {
-    contactsService
-      .getAll()
-      .then((data) => setContactos(Array.isArray(data) ? data : []))
-      .catch((err) => {
+    const fetchContacts = async () => {
+      try {
+        const data = await contactsService.getAll();
+        setContactos(Array.isArray(data) ? data : []);
+      } catch (err) {
         console.error("Error al obtener contactos:", err);
         setContactos([]);
-      });
+      }
+    };
+    
+    fetchContacts();
   }, []);
 
   // Agregar un nuevo contacto
@@ -33,6 +37,7 @@ const Callme = () => {
         return;
       }
 
+      console.log('Intentando crear contacto...');
       const contactoData = { 
         name: nombre, 
         number: contraseña, 
