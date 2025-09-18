@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import { obtenerMisTareas, setToken, responderTarea } from "../services/tareasService"
+import { useState, useEffect } from 'react'
+import { obtenerMisTareas, setToken, responderTarea } from '../services/tareasService'
 import Menu from '../components/Menu'
 
 const VerTareas = ({ user }) => {
@@ -14,7 +14,7 @@ const VerTareas = ({ user }) => {
 
   useEffect(() => {
     const cargarTareas = async () => {
-      if (user?.token && user?.Rol === 'user') {
+      if (user?.token && (user?.Rol === 'usuario' || user?.Rol === 'profesor')) {
         try {
           const misTareas = await obtenerMisTareas()
           setTareas(misTareas)
@@ -61,14 +61,14 @@ const VerTareas = ({ user }) => {
   return (
     <div className="tareas-container">
       <Menu user={user} />
-      <h2>Mis Tareas Asignadas</h2>
+      <h2>{user?.Rol === 'profesor' ? 'Tareas Asignadas' : 'Mis Tareas'}</h2>
       {mensaje && (
         <p className={`mensaje ${mensaje.includes("Error") ? "error" : "success"}`}>
           {mensaje}
         </p>
       )}
 
-      {user?.Rol === 'user' ? (
+      {(user?.Rol === 'usuario' || user?.Rol === 'profesor') ? (
         tareasPendientes.length === 0 ? (
           <p className="sin-tareas">🎉 ¡Todas tus tareas están completadas!</p>
         ) : (

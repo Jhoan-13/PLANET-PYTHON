@@ -8,22 +8,46 @@ const Crear = ({ user }) => {
   const [username, setUsername] = useState("")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
-  const [Rol, setRol] = useState("user")
+  const [Rol, setRol] = useState("usuario")  // Cambiado de "user" a "usuario"
   const [message, setMessage] = useState(null)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
     try {
+      // Validaciones del lado del cliente
+      if (username.length < 3) {
+        setMessage("❌ El nombre de usuario debe tener al menos 3 caracteres")
+        return
+      }
+      
+      if (password.length < 6) {
+        setMessage("❌ La contraseña debe tener al menos 6 caracteres")
+        return
+      }
+      
+      if (!name) {
+        setMessage("❌ El nombre es requerido")
+        return
+      }
+
       const newUser = { username, name, password, Rol }
       await userService.createUser(newUser)
+      
       setMessage("✅ Usuario creado correctamente")
       setUsername("")
       setName("")
       setPassword("")
-      setRol("user")
+      setRol("usuario")
+      
+      // Esperar un momento antes de recargar
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      
     } catch (error) {
-      console.error(error.response?.data || error.message)
-      setMessage(`❌ Error: ${error.response?.data?.error || "al crear usuario"}`)
+      console.error('Error:', error)
+      setMessage(`❌ ${error.message}`)
     }
 
     setTimeout(() => setMessage(null), 4000)
@@ -65,16 +89,16 @@ const Crear = ({ user }) => {
         <div>
           <label>Rol: </label>
           <select value={Rol} onChange={e => setRol(e.target.value)}>
-            <option value="user">Usuario</option>
-             <option value="maker">Docente</option>
-            <option value="admin">Administrador</option>
+            <option value="usuario">Usuario</option>
+            <option value="profesor">Profesor</option>
+            <option value="administrador">Administrador</option>
           </select>
         </div>
         <button type="submit">Crear</button>
       </form>
-      <ListaUsuarios/>
+      <ListaUsuarios user={user}/>
     </div>
   )
 }
 
-export default Crear
+export default Crear

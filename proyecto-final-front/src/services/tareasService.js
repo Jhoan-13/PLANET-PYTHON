@@ -2,46 +2,76 @@ import axios from 'axios'
 import { BASE_URL } from './config'
 
 const baseUrl = `${BASE_URL}/tareas`
-
 let token = null
 
 const setToken = newToken => {
-  token = `Bearer ${newToken}`
-}
-
-const obtenerTodas = async () => {
-  const response = await axios.get(baseUrl)
-  return response.data
+  token = newToken ? `Bearer ${newToken}` : null
 }
 
 const obtenerMisTareas = async () => {
+  if (!token) {
+    throw new Error('Token no establecido')
+  }
+
   const config = {
     headers: { Authorization: token }
   }
-  const response = await axios.get(`${baseUrl}/mis-tareas`, config)
-  return response.data
+
+  try {
+    const response = await axios.get(`${baseUrl}/mis-tareas`, config)
+    return response.data
+  } catch (error) {
+    console.error('Error al obtener tareas:', error)
+    throw error
+  }
 }
 
 const crearTarea = async newObject => {
+  if (!token) {
+    throw new Error('Token no establecido')
+  }
+
   const config = {
     headers: { Authorization: token }
   }
-  const response = await axios.post(baseUrl, newObject, config)
-  return response.data
+  
+  try {
+    console.log('Enviando tarea:', newObject)
+    console.log('Configuración:', config)
+    const response = await axios.post(baseUrl, newObject, config)
+    return response.data
+  } catch (error) {
+    console.error('Error detallado:', {
+      mensaje: error.message,
+      respuesta: error.response?.data,
+      status: error.response?.status
+    })
+    throw error
+  }
 }
 
-const responderTarea = async (id, answerData) => {
+const responderTarea = async (tareaId, respuestas) => {
+  if (!token) {
+    throw new Error('Token no establecido')
+  }
+
   const config = {
     headers: { Authorization: token }
   }
-  const response = await axios.post(`${baseUrl}/${id}/responder`, answerData, config)
-  return response.data
+
+  try {
+    const response = await axios.post(`${baseUrl}/${tareaId}/responder`, respuestas, config)
+    return response.data
+  } catch (error) {
+    console.error('Error al responder tarea:', error)
+    throw error
+  }
 }
 
+// Exportamos todas las funciones
 export {
-  obtenerTodas,
-  obtenerMisTareas,
   crearTarea,
-  responderTarea,
-  setToken
+  setToken,
+  obtenerMisTareas,
+  responderTarea
 }

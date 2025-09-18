@@ -23,29 +23,29 @@ usersRouter.post('/', async (request, response) => {
     // Validate required fields
     if (!username || !password || !name) {
       return response.status(400).json({
-        error: 'Username, password and name are required'
+        error: 'El usuario, contraseña y nombre son requeridos'
       });
     }
 
     // Validate username length
     if (username.length < 3) {
       return response.status(400).json({
-        error: 'Username must be at least 3 characters long'
+        error: 'El nombre de usuario debe tener al menos 3 caracteres'
       });
     }
 
     // Validate password strength
     if (password.length < 6) {
       return response.status(400).json({
-        error: 'Password must be at least 6 characters long'
+        error: 'La contraseña debe tener al menos 6 caracteres'
       });
     }
 
     // Validate role
-    const validRoles = ['user', 'maker', 'admin'];
+    const validRoles = ['usuario', 'profesor', 'administrador'];
     if (!validRoles.includes(Rol)) {
       return response.status(400).json({
-        error: 'Invalid role'
+        error: 'Rol inválido'  // Cambiado de 'Invalid role'
       });
     }
 
@@ -53,7 +53,7 @@ usersRouter.post('/', async (request, response) => {
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
       return response.status(400).json({
-        error: 'Username already taken'
+        error: 'El nombre de usuario ya está en uso'
       });
     }
 
@@ -64,7 +64,7 @@ usersRouter.post('/', async (request, response) => {
       username,
       name,
       passwordHash,
-      Rol: Rol || 'user' // Default to 'user' if not specified
+      Rol: Rol || 'usuario' // Cambiado de 'user' a 'usuario'
     });
 
     response.status(201).json({
@@ -75,10 +75,34 @@ usersRouter.post('/', async (request, response) => {
     });
   } catch (error) {
     response.status(500).json({
-      error: 'Error creating user',
+      error: 'Error al crear el usuario',  // Cambiado a español
       details: error.message
     });
   }
 });
 
-module.exports = usersRouter;
+// Delete user
+usersRouter.delete('/:id', async (request, response) => {
+  try {
+    const id = request.params.id;
+
+    // Verificar si el usuario existe
+    const user = await User.findByPk(id);
+    if (!user) {
+      return response.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Eliminar el usuario
+    await user.destroy();
+    response.status(204).end();
+  } catch (error) {
+    response.status(500).json({
+      error: 'Error deleting user',
+      details: error.message
+    });
+  }
+});
+
+module.exports = usersRouter;

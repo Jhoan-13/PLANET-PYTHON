@@ -21,8 +21,12 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   Rol: {
-    type: DataTypes.ENUM('user', 'maker', 'admin'),
-    defaultValue: 'user'
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      isIn: [['usuario', 'profesor', 'administrador']]
+    },
+    defaultValue: 'usuario'
   }
 }, {
   tableName: 'Users', // Match the table name in foreign key references

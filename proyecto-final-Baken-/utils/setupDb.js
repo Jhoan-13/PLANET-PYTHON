@@ -13,7 +13,7 @@ const setupDatabase = async () => {
       username: 'admin',
       name: 'Administrator',
       passwordHash: await require('bcrypt').hash('admin123', 10),
-      Rol: 'admin'
+      Rol: 'administrador'
     });
 
     logger.info('Initial setup completed');

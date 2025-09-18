@@ -4,13 +4,19 @@ import { BASE_URL } from './config'
 
 const baseUrl = `${BASE_URL}/users`
 
-const getAll = async () => {
-  const response = await axios.get(baseUrl)
-  return response.data
+const createUser = async userData => {
+  try {
+    const response = await axios.post(baseUrl, userData)
+    return response.data
+  } catch (error) {
+    // Mejorar el manejo del error para mostrar el mensaje específico del backend
+    const errorMessage = error.response?.data?.error || 'Error al crear el usuario'
+    throw new Error(errorMessage)
+  }
 }
 
-const create = async userData => {
-  const response = await axios.post(baseUrl, userData)
+const getAll = async () => {
+  const response = await axios.get(baseUrl)
   return response.data
 }
 
@@ -19,5 +25,14 @@ const getMakers = async () => {
   return response.data
 }
 
-export default { getAll, create, getMakers }
+const deleteUser = async (id) => {
+  const response = await axios.delete(`${baseUrl}/${id}`)
+  return response.data
+}
 
+export default {
+  getAll,
+  createUser,
+  getMakers,
+  deleteUser
+}

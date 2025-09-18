@@ -43,33 +43,70 @@ const errorHandler = (error, request, response, next) => {
 
 const tokenExtractor = (request, response, next) => {
   const authorization = request.get('authorization')
-  if (authorization && authorization.startsWith('Bearer ')) {
-    request.token = authorization.replace('Bearer ', '')
-  } else {
-    request.token = null
+  
+  if (!authorization || !authorization.toLowerCase().startsWith('bearer ')) {
+    return response.status(401).json({ 
+      error: 'Token no proporcionado o formato inválido' 
+    })
   }
-  next()
+
+  try {
+    const token = authorization.substring(7)
+    const decodedToken = jwt.verify(token, config.SECRET)
+    
+    if (!decodedToken.id) {
+      return response.status(401).json({ error: 'Token inválido' })
+    }
+    
+    request.user = decodedToken
+    next()
+  } catch (error) {
+    console.error('Error de token:', error)
+    return response.status(401).json({ 
+      error: 'Token inválido o expirado',
+      details: error.message 
+    })
+  }
 }
 
 const userExtractor = async (request, response, next) => {
   try {
     const authorization = request.get('authorization');
-    if (!authorization || !authorization.startsWith('Bearer ')) {
-      return response.status(401).json({ error: 'token missing' });
+    if (!authorization || !authorization.toLowerCase().startsWith('bearer ')) {
+      return response.status(401).json({ 
+        error: 'Token no proporcionado o formato inválido' 
+      });
     }
 
-    const token = authorization.replace('Bearer ', '');
+    const token = authorization.substring(7);
+    
+    // Agregar log para debugging
+    console.log('Token recibido:', token);
+    console.log('SECRET:', config.SECRET);
+
     const decodedToken = jwt.verify(token, config.SECRET);
     
+    if (!decodedToken.id) {
+      return response.status(401).json({ 
+        error: 'Token inválido - ID no encontrado' 
+      });
+    }
+
     const user = await User.findByPk(decodedToken.id);
     if (!user) {
-      return response.status(401).json({ error: 'invalid token' });
+      return response.status(401).json({ 
+        error: 'Usuario no encontrado' 
+      });
     }
 
     request.user = user;
     next();
   } catch (error) {
-    next(error);
+    console.error('Error en userExtractor:', error);
+    return response.status(401).json({ 
+      error: 'Token inválido o expirado',
+      details: error.message 
+    });
   }
 };
 
