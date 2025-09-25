@@ -1,12 +1,14 @@
-const sequelize = require('./db');
+const { sequelize } = require('./db')
 
-(async () => {
-    try {
-        await sequelize.authenticate();
-        console.log('Conneccion exitosa a postgreSQL.');
-    } catch (err) {
-        console.error("Error al conectar:", err.message);
-    } finally {
-        await sequelize.close();
-    }   
-})();
+async function testDB() {
+  try {
+    await sequelize.authenticate()
+    console.log('Connection has been established successfully.')
+  } catch (error) {
+    console.error('Unable to connect to the database:', error)
+  } finally {
+    await sequelize.close()
+  }
+}
+
+testDB()

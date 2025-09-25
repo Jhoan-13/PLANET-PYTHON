@@ -1,43 +1,16 @@
 import axios from 'axios'
-const baseUrl = '/api/tareas'
+import { BASE_URL } from './config'
 
+const baseUrl = `${BASE_URL}/tareas`
 let token = null
 
 const setToken = newToken => {
-  token = `Bearer ${newToken}`
+  token = newToken ? `Bearer ${newToken}` : null
 }
 
-export const crearTarea = async (tarea) => {
+const obtenerMisTareas = async () => {
   if (!token) {
-    throw new Error('Token no disponible')
-  }
-
-  const config = {
-    headers: { Authorization: token }
-  }
-
-  try {
-    const response = await axios.post(baseUrl, {
-      titulo: tarea.titulo,
-      descripcion: tarea.descripcion,
-      fechaLimite: tarea.fechaLimite,
-      preguntas: tarea.preguntas.map(p => ({
-        pregunta: p.pregunta,
-        opciones: p.opciones.map(o => ({
-          texto: o.texto,
-          esCorrecta: o.esCorrecta
-        }))
-      }))
-    }, config)
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.error || error.message
-  }
-}
-
-export const obtenerMisTareas = async () => {
-  if (!token) {
-    throw new Error('Token no disponible')
+    throw new Error('Token no establecido')
   }
 
   const config = {
@@ -48,13 +21,38 @@ export const obtenerMisTareas = async () => {
     const response = await axios.get(`${baseUrl}/mis-tareas`, config)
     return response.data
   } catch (error) {
-    throw error.response?.data?.error || error.message
+    console.error('Error al obtener tareas:', error)
+    throw error
   }
 }
 
-export const responderTarea = async (tareaId, preguntaIndex, respuestaIndex) => {
+const crearTarea = async newObject => {
   if (!token) {
-    throw new Error('Token no disponible')
+    throw new Error('Token no establecido')
+  }
+
+  const config = {
+    headers: { Authorization: token }
+  }
+  
+  try {
+    console.log('Enviando tarea:', newObject)
+    console.log('Configuración:', config)
+    const response = await axios.post(baseUrl, newObject, config)
+    return response.data
+  } catch (error) {
+    console.error('Error detallado:', {
+      mensaje: error.message,
+      respuesta: error.response?.data,
+      status: error.response?.status
+    })
+    throw error
+  }
+}
+
+const responderTarea = async (tareaId, respuestas) => {
+  if (!token) {
+    throw new Error('Token no establecido')
   }
 
   const config = {
@@ -62,14 +60,18 @@ export const responderTarea = async (tareaId, preguntaIndex, respuestaIndex) => 
   }
 
   try {
-    const response = await axios.post(`${baseUrl}/${tareaId}/responder`, {
-      preguntaIndex,
-      respuestaIndex
-    }, config)
+    const response = await axios.post(`${baseUrl}/${tareaId}/responder`, respuestas, config)
     return response.data
   } catch (error) {
-    throw error.response?.data?.error || error.message
+    console.error('Error al responder tarea:', error)
+    throw error
   }
 }
 
-export { setToken }
+// Exportamos todas las funciones
+export {
+  crearTarea,
+  setToken,
+  obtenerMisTareas,
+  responderTarea
+}

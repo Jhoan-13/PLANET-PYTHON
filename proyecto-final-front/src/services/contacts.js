@@ -1,28 +1,41 @@
 import axios from 'axios'
-const baseUrl = '/api/contacts'
+import { BASE_URL } from './config'
 
+const baseUrl = `${BASE_URL}/tareas`
 
-const getAll = () => {
-  const request = axios.get(baseUrl)
-  return request.then(response => response.data)
+let token = null
+
+const setToken = newToken => {
+  token = `Bearer ${newToken}`
+}
+
+const getAll = async () => {
+  const response = await axios.get(baseUrl)
+  return response.data
+}
+
+const getMine = async () => {
+  const config = {
+    headers: { Authorization: token }
+  }
+  const response = await axios.get(`${baseUrl}/mis-tareas`, config)
+  return response.data
 }
 
 const create = async newObject => {
- 
-  const response = await axios.post(baseUrl, newObject)
+  const config = {
+    headers: { Authorization: token }
+  }
+  const response = await axios.post(baseUrl, newObject, config)
   return response.data
 }
 
-const update = async (id, updatedObject) => {
-  const response = await axios.put(`${baseUrl}/${id}/number`, updatedObject)
+const answer = async (id, answerData) => {
+  const config = {
+    headers: { Authorization: token }
+  }
+  const response = await axios.post(`${baseUrl}/${id}/responder`, answerData, config)
   return response.data
 }
 
-const remove = async (id) => {
-
-  const response = await axios.delete(`${baseUrl}/${id}`)
-  return response.data
-}
-
-
-export default { getAll, remove, create, update }
+export default { getAll, getMine, create, answer, setToken }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import { crearTarea, obtenerMisTareas, setToken } from "../services/tareasService"
+import { useState, useEffect } from 'react'
+import { crearTarea, setToken, obtenerMisTareas } from '../services/tareasService'
 import Menu from "../components/Menu"
 
 
@@ -16,13 +16,15 @@ const Tareas = ({ user }) => {
 
   useEffect(() => {
     if (user?.token) {
+      console.log('Estableciendo token en Tareas:', user.token)
       setToken(user.token)
     }
   }, [user])
 
+  // Modificar la validación de roles
   useEffect(() => {
     const cargarTareas = async () => {
-      if (user?.token && user?.Rol === 'maker') {
+      if (user?.token && user?.Rol === 'profesor') {  // Cambiado de 'maker' a 'profesor'
         try {
           const misTareas = await obtenerMisTareas()
           setTareas(misTareas)
@@ -149,10 +151,10 @@ const Tareas = ({ user }) => {
         return false
       }
 
-      // Verificar que haya exactamente una respuesta correcta
+      // Verificar que haya al menos una respuesta correcta
       const opcionesCorrectas = pregunta.opciones.filter(o => o.esCorrecta)
-      if (opcionesCorrectas.length !== 1) {
-        setMensaje("Cada pregunta debe tener exactamente una opción correcta")
+      if (opcionesCorrectas.length < 1) {
+        setMensaje("Cada pregunta debe tener al menos una opción correcta")
         return false
       }
     }
@@ -162,37 +164,53 @@ const Tareas = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!user?.token || user?.Rol !== 'maker') {
-      setMensaje("No tienes permisos para crear tareas")
-      return
-    }
-
-    if (!validarFormulario()) {
-      return
-    }
-
+    
     try {
-      const nuevaTarea = {
-        titulo: titulo.trim(),
-        descripcion: descripcion.trim(),
-        fechaLimite: new Date(fechaLimite).toISOString(),
-        preguntas: preguntas.map(p => ({
-          pregunta: p.pregunta.trim(),
-          opciones: p.opciones
-            .filter(o => o.texto.trim())
-            .map(o => ({
-              texto: o.texto.trim(),
-              esCorrecta: o.esCorrecta
-            }))
-        }))
+      // Validaciones del lado del cliente
+      if (!titulo.trim()) {
+        setMensaje("❌ El título es obligatorio")
+        return
       }
 
-      console.log('Enviando tarea:', nuevaTarea) // Para debugging
-      const tareaCreada = await crearTarea(nuevaTarea)
-      console.log('Tarea creada:', tareaCreada) // Para debugging
+      if (!fechaLimite) {
+        setMensaje("❌ La fecha límite es obligatoria")
+        return
+      }
 
-      setTareas([...tareas, tareaCreada])
-      setMensaje("Tarea creada correctamente")
+      // Validar preguntas
+      for (const pregunta of preguntas) {
+        if (!pregunta.pregunta.trim()) {
+          setMensaje("❌ Cada pregunta debe tener un texto")
+          return
+        }
+
+        if (!pregunta.opciones || pregunta.opciones.length < 2) {
+          setMensaje("❌ Cada pregunta debe tener al menos dos opciones")
+          return
+        }
+
+        const opcionesValidas = pregunta.opciones.filter(o => o.texto.trim())
+        if (opcionesValidas.length < 2) {
+          setMensaje("❌ Cada pregunta debe tener al menos dos opciones con texto")
+          return
+        }
+
+        const tieneOpcionCorrecta = pregunta.opciones.some(o => o.esCorrecta)
+        if (!tieneOpcionCorrecta) {
+          setMensaje("❌ Cada pregunta debe tener al menos una opción correcta")
+          return
+        }
+      }
+
+      const nuevaTarea = {
+        titulo,
+        descripcion,
+        fechaLimite,
+        preguntas
+      }
+      
+      await crearTarea(nuevaTarea)
+      setMensaje("✅ Tarea creada exitosamente")
       
       // Limpiar formulario
       setTitulo("")
@@ -200,32 +218,29 @@ const Tareas = ({ user }) => {
       setFechaLimite("")
       setPreguntas([{
         pregunta: '',
-        opciones: [
-          { texto: '', esCorrecta: false },
-          { texto: '', esCorrecta: false }
-        ]
+        opciones: [{ texto: '', esCorrecta: false }]
       }])
+
+      // Recargar después de un momento
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      
     } catch (error) {
       console.error('Error al crear tarea:', error)
-      setMensaje(error?.response?.data?.error || "Error al crear la tarea")
+      setMensaje(`❌ ${error.response?.data?.error || error.message}`)
     }
+
     setTimeout(() => setMensaje(null), 4000)
   }
 
+  // Modificar la función actualizarOpcion
   const actualizarOpcion = (preguntaIndex, opcionIndex, campo, valor) => {
     const nuevasPreguntas = preguntas.map((pregunta, pIndex) => {
       if (pIndex === preguntaIndex) {
         const nuevasOpciones = pregunta.opciones.map((opcion, oIndex) => {
           if (oIndex === opcionIndex) {
-            // Si estamos marcando esta opción como correcta
-            if (campo === 'esCorrecta' && valor === true) {
-              return { ...opcion, esCorrecta: true }
-            }
             return { ...opcion, [campo]: valor }
-          }
-          // Si estamos marcando una opción como correcta, las demás deben ser incorrectas
-          if (campo === 'esCorrecta' && valor === true) {
-            return { ...opcion, esCorrecta: false }
           }
           return opcion
         })
@@ -241,12 +256,12 @@ const Tareas = ({ user }) => {
       <Menu user={user} />
       <h2>Gestión de Tareas</h2>
       {mensaje && (
-        <p className={`mensaje ${mensaje.includes("Error") ? "error" : "success"}`}>
+        <p className={`mensaje ${mensaje.includes("❌") ? "messageerror" : "messagesuccess"}`}>
           {mensaje}
         </p>
       )}
       
-      {user?.Rol === 'maker' ? (
+      {user?.Rol === 'profesor' ? (  // Cambiado de 'maker' a 'profesor'
         <>
           <h3>Crear Nueva Tarea</h3>
           <form onSubmit={handleSubmit} className="tarea-form">
@@ -303,8 +318,7 @@ const Tareas = ({ user }) => {
                         />
                         <label>
                           <input
-                            type="radio"
-                            name={`pregunta-${preguntaIndex}-correcta`}
+                            type="checkbox"
                             checked={opcion.esCorrecta}
                             onChange={(e) => actualizarOpcion(preguntaIndex, opcionIndex, 'esCorrecta', e.target.checked)}
                           /> Correcta
@@ -368,7 +382,7 @@ const Tareas = ({ user }) => {
           </ul>
         </>
       ) : (
-        <p>No tienes permisos para crear tareas</p>
+        <p>No tienes permisos para crear tareas. Solo los profesores pueden crear tareas.</p>
       )}
     </div>
   )

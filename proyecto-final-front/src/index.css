@@ -32,6 +32,24 @@
   animation: fadeOut 5s forwards;
 }
 
+.opcion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.opcion-item input[type="checkbox"]:checked + label {
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.opcion-item.correcta {
+  background-color: #e8f5e9;
+  padding: 5px;
+  border-radius: 4px;
+}
+
 @keyframes fadeOut {
   0% {
     opacity: 1;

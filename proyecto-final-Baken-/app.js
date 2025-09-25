@@ -1,41 +1,28 @@
-const config = require('./utils/config')
-const express = require('express')
-const app = express()
-const cors = require('cors')
-const notesRouter = require('./controllers/contacts')
-const blogsRouter = require('./controllers/blogs')
-const usersRouter = require('./controllers/users')
-const loginRouter = require('./controllers/login')
-const tareasRouter = require('./controllers/tareasRouters')
-const middleware = require('./utils/middleware')
-const logger = require('./utils/logger')
-const mongoose = require('mongoose')
+const express = require('express');
+const cors = require('cors');
+const middleware = require('./utils/middleware');
 
-mongoose.set('strictQuery', false)
+// Import routers
+const blogsRouter = require('./controllers/blogs');
+const usersRouter = require('./controllers/users');
+const loginRouter = require('./controllers/login');
+const contactsRouter = require('./controllers/contacts');
+const tareasRouter = require('./controllers/tareasRouters');
 
-logger.info('connecting to', config.MONGODB_URI)
+const app = express();
 
-mongoose.connect(config.MONGODB_URI)
-  .then(() => {
-    logger.info('connected to MongoDB')
-  })
-  .catch((error) => {
-    logger.error('error connecting to MongoDB:', error.message)
-  })
+// Middlewares
+app.use(cors());
+app.use(express.json());
 
-app.use(cors())
-app.use(express.static('dist'))
-app.use(express.json())
-app.use(middleware.requestLogger)
-app.use(middleware.tokenExtractor)
+// Routes
+app.use('/api/blogs', blogsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/login', loginRouter);
+app.use('/api/contacts', contactsRouter);
+app.use('/api/tareas', tareasRouter);
 
-app.use('/api/blogs', blogsRouter)
-app.use('/api/users', usersRouter)
-app.use('/api/login', loginRouter)
-app.use('/api/tareas', tareasRouter)
-app.use('/api/contacts', notesRouter)
+// Error handling
+app.use(middleware.errorHandler);
 
-app.use(middleware.unknownEndpoint)
-app.use(middleware.errorHandler)
-
-module.exports = app
+module.exports = app;

@@ -1,9 +1,7 @@
-const { Model, DataTypes } = require('sequelize')
-const { sequelize } = require('../util/db')
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../db');
 
-class Contact extends Model {}
-
-Contact.init({
+const Contact = sequelize.define('Contact', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -11,37 +9,24 @@ Contact.init({
   },
   name: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      len: [3, Infinity]
-    }
+    allowNull: false
   },
   number: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      len: [10, Infinity]
-    }
+    allowNull: false
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
     validate: {
       isEmail: true
     }
   },
   comments: {
-    type: DataTypes.TEXT,
-    allowNull: false
+    type: DataTypes.TEXT
   }
 }, {
-  sequelize,
-  underscored: true,
-  timestamps: false,
-  modelName: 'contact'
-})
+  tableName: 'contacts',
+  timestamps: true
+});
 
-module.exports = Contact
+module.exports = Contact;

@@ -2,67 +2,93 @@ const contactRouter = require('express').Router()
 const Contact = require('../models/contact')
 
 contactRouter.get('/', async (request, response) => {
-  const contacts = await Contact
-    .find({})
-
-  response.json(contacts)
-})
-
-contactRouter.get('/:id', async (request, response) => {
-  const contact = await Contact.findById(request.params.id)
-  if (contact) {
-    response.json(contact)
-  } else {
-    response.status(404).end()
+  try {
+    const contacts = await Contact
+      .find({})
+      .sort({ createdAt: -1 })
+    response.json(contacts)
+  } catch (error) {
+    response.status(500).json({ error: 'Server error' })
   }
 })
 
-contactRouter.post('/', async (request, response, next) => {
-  const body = request.body
+contactRouter.get('/:id', async (request, response) => {
+  try {
+    const contact = await Contact.findById(request.params.id)
+    if (contact) {
+      response.json(contact)
+    } else {
+      response.status(404).json({ error: 'Contact not found' })
+    }
+  } catch (error) {
+    response.status(400).json({ error: error.message })
+  }
+})
+
+contactRouter.post('/', async (request, response) => {
+  const { name, number, email, comments } = request.body
+
+  if (!name || !number) {
+    return response.status(400).json({ error: 'name and number are required' })
+  }
 
   const contact = new Contact({
-    name: body.name,
-    number: body.number,
-    email: body.email,
-    comments: body.comments
+    name,
+    number,
+    email,
+    comments: comments || '',
+    createdAt: new Date()
   })
 
   try {
     const savedContact = await contact.save()
-    response.json(savedContact)
+    response.status(201).json(savedContact)
   } catch (error) {
-    next(error)
+    response.status(400).json({ error: error.message })
   }
 })
 
-contactRouter.delete('/:id', async (request, response, next) => {
+contactRouter.delete('/:id', async (request, response) => {
   try {
     const contact = await Contact.findByIdAndDelete(request.params.id)
     if (contact) {
       response.status(204).end()
     } else {
-      response.status(404).end()
+      response.status(404).json({ error: 'Contact not found' })
     }
   } catch (error) {
-    next(error)
+    response.status(400).json({ error: error.message })
   }
 })
 
+contactRouter.put('/:id', async (request, response) => {
+  const { name, number, email, comments } = request.body
 
-contactRouter.put('/:id/number', async (request, response, next) => {
-  const { number } = request.body
+  if (!name || !number) {
+    return response.status(400).json({ error: 'name and number are required' })
+  }
+
+  const contactToUpdate = {
+    name,
+    number,
+    email,
+    comments: comments || ''
+  }
 
   try {
-    const updatedContact = await Contact.findByIdAndUpdate(request.params.id,
-      { number }, { new: true, runValidators: true })
+    const updatedContact = await Contact.findByIdAndUpdate(
+      request.params.id,
+      contactToUpdate,
+      { new: true, runValidators: true }
+    )
+    
     if (updatedContact) {
       response.json(updatedContact)
     } else {
-      response.status(404).end()
+      response.status(404).json({ error: 'Contact not found' })
     }
-  }
-  catch (error) {
-    next(error)
+  } catch (error) {
+    response.status(400).json({ error: error.message })
   }
 })
 

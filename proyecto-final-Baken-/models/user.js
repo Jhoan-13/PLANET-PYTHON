@@ -1,44 +1,36 @@
-const { Model, DataTypes } = require('sequelize')
-const { sequelize } = require('../util/db')
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../db');
 
-class User extends Model {}
-
-User.init({
+const User = sequelize.define('User', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
   username: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(50),
     unique: true,
-    validate: {
-      len: [5, Infinity]
-    }
+    allowNull: false
   },
   name: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
   passwordHash: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  Rol: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      len: [3, Infinity]
-    }
-  },
-  rol: {
-    type: DataTypes.STRING,
-    defaultValue: 'user'
+      isIn: [['usuario', 'profesor', 'administrador']]
+    },
+    defaultValue: 'usuario'
   }
 }, {
-  sequelize,
-  underscored: true,
-  timestamps: false,
-  modelName: 'user',
-  defaultScope: {
-    attributes: { exclude: ['passwordHash'] }
-  }
-})
+  tableName: 'Users', // Match the table name in foreign key references
+  timestamps: true
+});
 
-module.exports = User
+module.exports = User;

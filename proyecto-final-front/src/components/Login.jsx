@@ -1,55 +1,64 @@
-import Notification from "./Notification"
-import PropTypes from 'prop-types'
+import { useState } from 'react'
+import loginService from '../services/login'
+import { setToken as setTareasToken } from '../services/tareasService'
 import './css/login.css'
 
-const LoginForm = ({
-  handleLogin,
-  username,
-  setUsername,
-  password,
-  setPassword,
-  message
-}) => {
+const Login = ({ handleLogin: parentHandleLogin, username, setUsername, password, setPassword, message }) => {
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+
+    try {
+      const user = await parentHandleLogin(event)
+      // Asegurarse de que el usuario se guarde en localStorage
+      window.localStorage.setItem('loggedUser', JSON.stringify(user))
+      setToken(user.token)
+      
+    } catch (error) {
+      console.error('Error en login:', error)
+      setMensaje("Error al iniciar sesión")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div>
-      <h2>Login</h2>
-      <Notification message={message}/>
-      <form onSubmit={handleLogin}>
+    <div className="login-container">
+      <h2>Iniciar Sesión</h2>
+      {message && (
+        <div className={`message ${message.type ? 'success' : 'error'}`}>
+          {message.message}
+        </div>
+      )}
+      <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="username">username </label>
           <input
-            id="username"
             type="text"
             value={username}
             name="Username"
+            placeholder="Usuario"
             onChange={({ target }) => setUsername(target.value)}
-            autoComplete="username"
+            disabled={loading}
           />
         </div>
         <div>
-          <label htmlFor="password">password </label>
           <input
-            id="password"
             type="password"
             value={password}
             name="Password"
+            placeholder="Contraseña"
             onChange={({ target }) => setPassword(target.value)}
-            autoComplete="current-password"
+            disabled={loading}
           />
         </div>
-        <button type="submit">login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Cargando...' : 'Iniciar Sesión'}
+        </button>
       </form>
     </div>
   )
 }
 
-LoginForm.propTypes = {
-  handleLogin: PropTypes.func.isRequired,
-  username: PropTypes.string.isRequired,
-  setUsername: PropTypes.func.isRequired,
-  password: PropTypes.string.isRequired,
-  setPassword: PropTypes.func.isRequired,
-  message: PropTypes.object
-}
-
-export default LoginForm
+export default Login

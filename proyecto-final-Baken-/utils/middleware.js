@@ -1,6 +1,7 @@
 const logger = require('./logger')
-const jwt = require('jsonwebtoken')
-const User = require('../models/user')
+const jwt = require('jsonwebtoken');
+const { User } = require('../models');
+const config = require('./config');
 
 const requestLogger = (request, response, next) => {
   logger.info('Method:', request.method)
@@ -33,6 +34,8 @@ const errorHandler = (error, request, response, next) => {
     return response.status(401).json({
       error: 'token expired'
     })
+  } else if (error.name === 'SequelizeValidationError') {
+    return response.status(400).json({ error: error.message });
   }
 
   next(error)
@@ -40,38 +43,72 @@ const errorHandler = (error, request, response, next) => {
 
 const tokenExtractor = (request, response, next) => {
   const authorization = request.get('authorization')
-  if (authorization && authorization.startsWith('Bearer ')) {
-    request.token = authorization.replace('Bearer ', '')
-  } else {
-    request.token = null
+  
+  if (!authorization || !authorization.toLowerCase().startsWith('bearer ')) {
+    return response.status(401).json({ 
+      error: 'Token no proporcionado o formato inválido' 
+    })
   }
-  next()
+
+  try {
+    const token = authorization.substring(7)
+    const decodedToken = jwt.verify(token, config.SECRET)
+    
+    if (!decodedToken.id) {
+      return response.status(401).json({ error: 'Token inválido' })
+    }
+    
+    request.user = decodedToken
+    next()
+  } catch (error) {
+    console.error('Error de token:', error)
+    return response.status(401).json({ 
+      error: 'Token inválido o expirado',
+      details: error.message 
+    })
+  }
 }
 
 const userExtractor = async (request, response, next) => {
   try {
-    const decodedToken = jwt.verify(request.token, process.env.SECRET)
+    const authorization = request.get('authorization');
+    if (!authorization || !authorization.toLowerCase().startsWith('bearer ')) {
+      return response.status(401).json({ 
+        error: 'Token no proporcionado o formato inválido' 
+      });
+    }
+
+    const token = authorization.substring(7);
+    
+    // Agregar log para debugging
+    console.log('Token recibido:', token);
+    console.log('SECRET:', config.SECRET);
+
+    const decodedToken = jwt.verify(token, config.SECRET);
+    
     if (!decodedToken.id) {
-      return response.status(401).json({ error: 'token missing or invalid' })
+      return response.status(401).json({ 
+        error: 'Token inválido - ID no encontrado' 
+      });
     }
 
-    const user = await User.findById(decodedToken.id)
+    const user = await User.findByPk(decodedToken.id);
     if (!user) {
-      return response.status(401).json({ error: 'token missing or invalid' })
+      return response.status(401).json({ 
+        error: 'Usuario no encontrado' 
+      });
     }
 
-    request.user = {
-      id: user._id,
-      username: user.username,
-      name: user.name,
-      Rol: user.Rol
-    }
-
-    next()
+    request.user = user;
+    next();
   } catch (error) {
-    next(error)
+    console.error('Error en userExtractor:', error);
+    return response.status(401).json({ 
+      error: 'Token inválido o expirado',
+      details: error.message 
+    });
   }
-}
+};
 
 module.exports = {
   requestLogger,

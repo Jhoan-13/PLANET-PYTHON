@@ -29,47 +29,28 @@ const Contactanos = ({ user: userProp, setUser: setUserProp }) => {
         password
       })
 
-      // Verificamos que tengamos toda la información necesaria
-      if (!userData.userId || !userData.Rol) {
-        throw new Error('Información de usuario incompleta')
-      }
-
-      // Creamos el objeto de usuario completo según la respuesta del backend
       const userToSave = {
         username: userData.username,
         name: userData.name,
         token: userData.token,
-        Rol: userData.Rol,
-        id: userData.userId // Usamos userId que viene del backend
+        Rol: userData.Rol || userData.rol, // Aceptar ambas versiones
+        id: userData.userId
       }
 
-      // Guardamos en localStorage
       window.localStorage.setItem(
         'loggedBlogappUser', 
         JSON.stringify(userToSave)
       )
 
-      // Configuramos los tokens
       blogService.setToken(userData.token)
       setTareasToken(userData.token)
-
-      // Actualizamos el estado global
       setUserProp(userToSave)
-      
-      // Limpiamos campos
       setUsername('')
       setPassword('')
       
       setMessage({
-        message: `Bienvenido ${userData.name} (${userData.Rol})`,
+        message: `Bienvenido ${userData.name}`,
         type: true
-      })
-
-      // Log para debugging
-      console.log('Usuario logueado:', {
-        id: userData.userId,
-        rol: userData.Rol,
-        token: userData.token?.substring(0, 10) + '...'
       })
 
     } catch (error) {
